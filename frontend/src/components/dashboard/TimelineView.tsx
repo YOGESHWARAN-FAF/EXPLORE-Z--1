@@ -123,20 +123,20 @@ export const TimelineView: React.FC<TimelineProps> = ({ schedule, dayTitle = "Da
               </div>
 
               {/* Event Card */}
-              <div className="p-3 sm:p-4 rounded-2xl bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#FFBA00] transition-all shadow-sm space-y-2">
+              <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#FFBA00] transition-all shadow-sm space-y-3">
                 {/* Top Row: Activity + KM + Time */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-base shrink-0">{iconEmoji}</span>
-                    <span className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">{item.activity || item.title}</span>
+                    <span className="text-lg shrink-0">{iconEmoji}</span>
+                    <span className="font-black text-xs sm:text-sm text-slate-900 truncate">{item.activity || item.title}</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     {item.km_mark !== undefined && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#FFBA00] text-black text-[10px] font-black">
+                      <span className="px-3 py-1 rounded-full bg-[#FFBA00] text-black text-[10px] sm:text-xs font-black shadow-sm">
                         KM {item.km_mark}
                       </span>
                     )}
-                    <span className="px-2 sm:px-2.5 py-1 rounded-xl bg-slate-900 text-white text-[10px] sm:text-[11px] font-bold flex items-center gap-1">
+                    <span className="px-3 py-1 rounded-full bg-slate-900 text-[#FFBA00] text-[10px] sm:text-[11px] font-black flex items-center gap-1 shadow-sm">
                       <Clock className="w-3 h-3 text-[#FFBA00]" /> {item.time}
                     </span>
                   </div>
@@ -144,16 +144,16 @@ export const TimelineView: React.FC<TimelineProps> = ({ schedule, dayTitle = "Da
 
                 {/* Location Row + Navigate Button */}
                 {item.location && (
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[11px] sm:text-xs text-slate-600 font-semibold flex items-center gap-1.5 min-w-0 truncate">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+                    <div className="text-[11px] sm:text-xs text-slate-700 font-bold flex items-center gap-1.5 min-w-0 truncate">
                       <MapPin className="w-3.5 h-3.5 text-[#FFBA00] shrink-0" /> {item.location}
                     </div>
                     {canNavigate(item) && (
                       <button
                         onClick={() => handleNavToMap(item)}
-                        className="shrink-0 px-3 py-1.5 rounded-xl bg-[#FFBA00] hover:bg-[#FF9F00] text-black text-[10px] sm:text-xs font-black flex items-center gap-1 active:scale-95 transition-all shadow-sm cursor-pointer min-h-[36px]"
+                        className="w-full sm:w-auto shrink-0 px-4 py-2 rounded-full bg-[#FFBA00] hover:bg-[#FF9F00] text-black text-[11px] sm:text-xs font-black flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-[#FFBA00]/20 cursor-pointer min-h-[38px]"
                       >
-                        <Navigation className="w-3 h-3 text-black fill-black" /> Navigate
+                        <Navigation className="w-3.5 h-3.5 text-black fill-black" /> Navigate on Map
                       </button>
                     )}
                   </div>

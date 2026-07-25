@@ -24,27 +24,31 @@ class ScheduleItem(BaseModel):
     safety_tips: Optional[str] = None
 
 class BudgetBreakdown(BaseModel):
-    accommodation: float
-    food_and_dining: float
-    transportation: float
-    activities_and_entry: float
-    emergency_fund: float
-    total: float
+    accommodation: float = 0.0
+    food_and_dining: float = 0.0
+    transportation: float = 0.0
+    activities_and_entry: float = 0.0
+    emergency_fund: float = 0.0
+    total: float = 0.0
 
 class AIHealthRecommendation(BaseModel):
-    member_name: str
-    condition_summary: str
-    avoid_activities: List[str]
-    recommended_activities: List[str]
-    special_care_tips: List[str]
+    member_name: str = "Traveler"
+    condition_summary: str = "Good Health"
+    walking_limit: Optional[str] = None
+    medical_warnings: List[str] = Field(default_factory=list)
+    suitable_activities: List[str] = Field(default_factory=list)
+    emergency_kit_items: List[str] = Field(default_factory=list)
+    avoid_activities: List[str] = Field(default_factory=list)
+    recommended_activities: List[str] = Field(default_factory=list)
+    special_care_tips: List[str] = Field(default_factory=list)
 
 class SmartHotelRecommendation(BaseModel):
-    day: str
-    target_km: float
-    hotel_name: str
-    location: str
-    rating: float
-    reasons: List[str] # Safe parking, 24h check-in, family friendly, budget friendly
+    day: str = "Day 1"
+    target_km: float = 0.0
+    hotel_name: str = "Recommended Hotel"
+    location: str = "Highway Corridor"
+    rating: float = 4.5
+    reasons: List[str] = Field(default_factory=list)
 
 class TripPlanResult(BaseModel):
     trip_id: str
@@ -58,11 +62,11 @@ class TripPlanResult(BaseModel):
     expected_arrival_time: str = "05:30 PM"
     safety_score: int = 90 # 0 - 100
     trip_summary: str
-    route_geometry: List[List[float]] = [] # [[lat, lon], ...]
-    checkpoints: List[Dict[str, Any]] = []
-    weather_overview: Dict[str, Any] = {}
-    budget_breakdown: BudgetBreakdown
-    health_recommendations: List[AIHealthRecommendation] = []
+    route_geometry: List[List[float]] = Field(default_factory=list)
+    checkpoints: List[Dict[str, Any]] = Field(default_factory=list)
+    weather_overview: Dict[str, Any] = Field(default_factory=dict)
+    budget_breakdown: Optional[BudgetBreakdown] = None
+    health_recommendations: List[AIHealthRecommendation] = Field(default_factory=list)
     best_tourist_places: List[Place] = []
     best_hotels: List[Place] = []
     best_restaurants: List[Place] = []
