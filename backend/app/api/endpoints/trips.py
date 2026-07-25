@@ -2,46 +2,80 @@ import traceback
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
 from app.models.trip import TripRequest, TripPlanResult
-from app.services.weather_service import get_coordinates_for_destination, get_weather_forecast
+from app.services.route_service import geocode_location, fetch_osrm_route, sample_checkpoints_along_route
+from app.services.weather_service import get_weather_forecast
 from app.services.news_service import fetch_destination_news
-from app.services.places_service import generate_destination_places
+from app.services.places_service import generate_route_checkpoint_places
 from app.services.groq_service import generate_ai_trip_plan
+from app.core.firebase import (
+    save_trip_to_firebase, get_saved_trips_from_firebase,
+    get_cached_poi_data_from_firebase, save_cached_poi_data_to_firebase
+)
 from app.core.security import get_current_user
-from app.core.firebase import save_trip_to_firebase, get_saved_trips_from_firebase
+from app.models.place import Place
 
 router = APIRouter()
 
 @router.post("/generate", response_model=TripPlanResult)
 async def generate_trip_endpoint(trip_req: TripRequest, user: dict = Depends(get_current_user)):
     """
-    1. Collect Destination, Boundary, Duration, Budget, Members & Health
-    2. Fetch Geocode & Open-Meteo Weather
-    3. Fetch GNews Alerts & Tourist Advisories
-    4. Fetch Categorized Places (Tourist, Hotels, Restaurants, Bakeries, EV, Hospitals, Bus Stand, ATM, Parking)
-    5. Evaluate Medical & Health rules for every group member
-    6. Process with Groq AI (llama-3.1-8b-instant)
-    7. Persist directly to Firebase Realtime Database
+    1. Geocode Origin (FROM) and Destination (TO) into GPS coordinates.
+    2. Generate complete route geometry via OSRM / route service.
+    3. Sample checkpoints every 5-10 km along the route.
+    4. Check shared Firebase common POI cache to eliminate duplicate API calls across all users.
+    5. Fetch Open-Meteo Weather along route and GNews for cities along route.
+    6. Evaluate Medical & Health rules for all team members.
+    7. Process structured JSON with Groq LLM (llama-3.1-8b-instant).
+    8. Save result to Firebase Realtime DB and return.
     """
-    print(f"🚀 [API REQUEST /planner/generate] Generating trip for '{trip_req.destination}' | Members: {len(trip_req.members)} | Budget: ₹{trip_req.budget}")
+    origin_name = trip_req.origin or "Chennai"
+    dest_name = trip_req.destination or "Salem"
+
+    print(f"🚀 [API REQUEST /planner/generate] Route trip: '{origin_name}' → '{dest_name}' | Mode: {trip_req.travel_mode} | Duration: {trip_req.duration} | Members: {len(trip_req.members)} | Budget: ₹{trip_req.budget}")
     try:
-        # Step 1: Geocode
-        coords = await get_coordinates_for_destination(trip_req.destination)
-        lat, lng = coords["latitude"], coords["longitude"]
+        # Step 1: Geocode Origin & Destination
+        origin_geo = await geocode_location(origin_name)
+        dest_geo = await geocode_location(dest_name)
 
-        # Step 2: Weather & News
-        weather = await get_weather_forecast(lat, lng)
-        news_articles, news_summary = await fetch_destination_news(trip_req.destination)
+        # Step 2: Route Generation via OSRM
+        route_data = await fetch_osrm_route(
+            origin_geo["latitude"], origin_geo["longitude"],
+            dest_geo["latitude"], dest_geo["longitude"],
+            mode=trip_req.travel_mode
+        )
 
-        # Step 3: Places
-        places = generate_destination_places(trip_req.destination, lat, lng)
+        # Step 3: Sample Checkpoints every 7.5 km
+        checkpoints = sample_checkpoints_along_route(
+            route_data["coordinates"], route_data["distance_km"], interval_km=7.5
+        )
 
-        # Step 4: AI Generation via Groq LLM
-        result = await generate_ai_trip_plan(trip_req, weather, news_articles, news_summary, places)
+        # Step 4: Shared Firebase Common POI Cache Check
+        cache_key = f"{origin_name.strip().lower()}_{dest_name.strip().lower()}"
+        cached_places_raw = get_cached_poi_data_from_firebase(cache_key)
+
+        if cached_places_raw and isinstance(cached_places_raw, list) and len(cached_places_raw) > 0:
+            print(f"⚡ [FIREBASE COMMON CACHE] Reusing {len(cached_places_raw)} cached POIs for route '{origin_name}' → '{dest_name}' across all users.")
+            places = [Place(**p) for p in cached_places_raw]
+        else:
+            places = generate_route_checkpoint_places(
+                origin_name, dest_name, checkpoints, route_data["distance_km"]
+            )
+            # Save to shared Firebase common cache for all users
+            save_cached_poi_data_to_firebase(cache_key, [p.model_dump() for p in places])
+
+        # Step 5: Weather forecast & News
+        weather = await get_weather_forecast(dest_geo["latitude"], dest_geo["longitude"])
+        news_articles, news_summary, _ = await fetch_destination_news(dest_name)
+
+        # Step 6: Groq LLM Generation
+        result = await generate_ai_trip_plan(
+            trip_req, route_data, checkpoints, weather, news_articles, news_summary, places
+        )
 
         # Persist directly to Firebase Realtime Database
         save_trip_to_firebase(result.model_dump())
 
-        print(f"✅ [API RESPONSE /planner/generate] Trip generated successfully! Trip ID: {result.trip_id} | Safety Score: {result.safety_score}")
+        print(f"✅ [API RESPONSE /planner/generate] Route trip generated! Trip ID: {result.trip_id} | Total Dist: {result.total_distance_km} KM | Safety: {result.safety_score}")
         return result
 
     except Exception as e:

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Compass, Sparkles, Map, ShieldAlert, MessageSquare } from 'lucide-react';
+import { Compass, Sparkles, Map, Newspaper, MessageSquare, ShieldAlert } from 'lucide-react';
 import { useTracking } from '../../context/TrackingContext';
 
 export const BottomNav: React.FC = () => {
@@ -11,7 +11,8 @@ export const BottomNav: React.FC = () => {
     { label: 'Home', path: '/', icon: Compass },
     { label: 'Dashboard', path: '/dashboard', icon: Sparkles },
     { label: 'Plan Page', path: '/planner', icon: Map },
-    { label: 'AI Assistant', path: '/ai-chat', icon: MessageSquare },
+    { label: 'Live News', path: '/news', icon: Newspaper },
+    { label: 'AI Chat', path: '/ai-chat', icon: MessageSquare },
   ];
 
   return (

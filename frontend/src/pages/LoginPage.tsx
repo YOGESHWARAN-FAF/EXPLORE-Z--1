@@ -34,13 +34,13 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto py-16 px-4">
-      <div className="glass-panel p-8 border border-slate-200 rounded-3xl shadow-sm space-y-6 bg-white">
+    <div className="max-w-md mx-auto py-16 px-4 bg-white min-h-[85vh]">
+      <div className="p-8 border border-slate-200 rounded-3xl shadow-xl space-y-6 bg-white text-slate-900">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center mx-auto shadow-glow-orange">
-            <Compass className="w-6 h-6 text-white stroke-[2.5]" />
+          <div className="w-12 h-12 rounded-2xl bg-[#FFBA00] text-black flex items-center justify-center mx-auto shadow-md">
+            <Compass className="w-6 h-6 stroke-[2.5]" />
           </div>
-          <h1 className="text-2xl font-extrabold font-outfit text-slate-900">Welcome Back</h1>
+          <h1 className="text-2xl font-black font-outfit text-slate-900">Welcome Back</h1>
           <p className="text-xs text-slate-500 font-medium">Sign in to manage your AI Tourist trips & Firebase tracking</p>
         </div>
 
@@ -52,7 +52,7 @@ export const LoginPage: React.FC = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full glass-input text-xs font-medium"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FFBA00]/40"
               placeholder="tourist@planner.ai"
             />
           </div>
@@ -64,7 +64,7 @@ export const LoginPage: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full glass-input text-xs font-medium"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FFBA00]/40"
               placeholder="••••••••"
             />
           </div>
@@ -72,9 +72,9 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-[#FFBA00] hover:bg-[#FF9F00] text-black font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
-            <LogIn className="w-4 h-4" /> {loading ? 'Signing in...' : 'Sign In with Firebase'}
+            <LogIn className="w-4 h-4 text-black" /> {loading ? 'Signing in...' : 'Sign In with Firebase'}
           </button>
         </form>
 
@@ -86,14 +86,14 @@ export const LoginPage: React.FC = () => {
         <button
           onClick={handleGoogle}
           disabled={loading}
-          className="w-full py-3.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-100 font-bold text-xs border border-slate-200 flex items-center justify-center gap-2 transition-all"
+          className="w-full py-3.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-100 font-bold text-xs border border-slate-200 flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
           <Chrome className="w-4 h-4 text-rose-600" /> Continue with Google Auth
         </button>
 
         <p className="text-center text-xs text-slate-500 font-medium">
           Don't have an account?{' '}
-          <Link to="/register" className="text-orange-600 font-bold hover:underline">
+          <Link to="/register" className="text-[#FFBA00] font-black hover:underline">
             Register Now
           </Link>
         </p>

@@ -7,6 +7,7 @@ import { TrackingProvider } from './context/TrackingContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/layout/Navbar';
 import { BottomNav } from './components/layout/BottomNav';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
 
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -14,6 +15,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PlannerPage } from './pages/PlannerPage';
 import { AIChatPage } from './pages/AIChatPage';
+import { GNewsFeedPage } from './pages/GNewsFeedPage';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -41,16 +43,16 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-white text-slate-900 flex flex-col items-center justify-center p-6 text-center space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-orange-100 border border-orange-200 text-orange-600 flex items-center justify-center font-bold text-xl">
+          <div className="w-12 h-12 rounded-2xl bg-[#FFBA00] text-black flex items-center justify-center font-black text-xl">
             !
           </div>
-          <h2 className="text-2xl font-bold font-outfit">Something went wrong while rendering this page</h2>
-          <p className="text-xs text-slate-500 max-w-md">
+          <h2 className="text-2xl font-black font-outfit">Something went wrong while rendering this page</h2>
+          <p className="text-xs text-slate-500 max-w-md font-medium">
             {this.state.error?.message || "An unexpected error occurred. Please click below to reload."}
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2.5 rounded-xl bg-orange-500 text-white font-extrabold text-xs shadow-md hover:bg-orange-600"
+            className="px-6 py-2.5 rounded-xl bg-[#FFBA00] hover:bg-[#FF9F00] text-black font-black text-xs shadow-md"
           >
             Reload Page
           </button>
@@ -70,9 +72,9 @@ export const App: React.FC = () => {
           <TripProvider>
             <TrackingProvider>
               <Router>
-                <div className="min-h-screen bg-white text-slate-900 flex flex-col pb-20 md:pb-8">
+                <div className="min-h-screen bg-white text-slate-900 flex flex-col pb-24 md:pb-8 relative">
                   <Navbar />
-                  <main className="flex-1">
+                  <main className="flex-1 pb-16 md:pb-0">
                     <Routes>
                       {/* Page 1: Landing Intro Page */}
                       <Route path="/" element={<LandingPage />} />
@@ -87,11 +89,17 @@ export const App: React.FC = () => {
                       {/* Page 4: Plan Page */}
                       <Route path="/planner" element={<PlannerPage />} />
 
-                      {/* Page 5: AI Assistant */}
+                      {/* Page 5: Live GNews Feed */}
+                      <Route path="/news" element={<GNewsFeedPage />} />
+
+                      {/* Page 6: AI Assistant */}
                       <Route path="/ai-chat" element={<AIChatPage />} />
                     </Routes>
                   </main>
-                  <BottomNav />
+                  
+                  {/* Floating Mobile Bottom Navigation Dock */}
+                  <MobileBottomNav />
+
                   <Toaster
                     position="top-right"
                     toastOptions={{

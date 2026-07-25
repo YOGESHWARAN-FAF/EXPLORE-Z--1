@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Send, Sparkles, Bot, User } from 'lucide-react';
 import { useTrip } from '../context/TripContext';
+import { SaaSCard } from '../components/ui/SaaSCard';
+import { SaaSButton } from '../components/ui/SaaSButton';
 import api from '../services/api';
 
 interface ChatMessage {
@@ -51,44 +53,44 @@ export const AIChatPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-6 px-4 space-y-4">
-      <div className="glass-panel p-4 sm:p-6 border border-slate-200 flex items-center justify-between bg-white">
+    <div className="max-w-4xl mx-auto py-6 px-4 space-y-4 text-slate-900 bg-white min-h-[85vh]">
+      <SaaSCard className="p-4 sm:p-6 flex items-center justify-between border-slate-200 bg-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-600">
+          <div className="w-10 h-10 rounded-2xl bg-[#FFBA00] text-black flex items-center justify-center font-black shadow-md shadow-[#FFBA00]/30">
             <Bot className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 font-outfit">AI Travel & Health Assistant</h1>
-            <span className="text-xs text-orange-600 font-semibold">Destination Context: {destination}</span>
+            <h1 className="text-xl font-black text-slate-900 font-outfit">AI Travel & Health Assistant</h1>
+            <span className="text-xs text-[#FFBA00] font-black">Destination Context: {destination}</span>
           </div>
         </div>
-        <span className="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-900 border border-orange-200">
+        <span className="px-3 py-1 rounded-full text-xs font-black bg-[#FFBA00] text-black border border-[#FFBA00]">
           Groq LLM Active
         </span>
-      </div>
+      </SaaSCard>
 
-      <div className="glass-panel p-4 sm:p-6 border border-slate-200 h-[500px] overflow-y-auto space-y-4 bg-white">
+      <SaaSCard className="p-4 sm:p-6 h-[500px] overflow-y-auto space-y-4 border-slate-200 bg-white">
         {messages.map((m, idx) => (
           <div
             key={idx}
             className={`flex items-start gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {m.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-xl bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-600 shrink-0 mt-1">
+              <div className="w-8 h-8 rounded-xl bg-[#FFBA00] border border-[#FFBA00] flex items-center justify-center text-black font-black shrink-0 mt-1 shadow-sm">
                 <Bot className="w-4 h-4" />
               </div>
             )}
 
-            <div className={`p-4 rounded-2xl max-w-[80%] text-xs sm:text-sm leading-relaxed font-medium ${
+            <div className={`p-4 rounded-2xl max-w-[80%] text-xs sm:text-sm leading-relaxed ${
               m.role === 'user'
-                ? 'bg-orange-500 text-white font-semibold rounded-tr-none shadow-sm'
-                : 'bg-slate-50 text-slate-900 border border-slate-200 rounded-tl-none'
+                ? 'bg-[#FFBA00] text-black font-black rounded-tr-none shadow-md'
+                : 'bg-slate-100 text-slate-900 border border-slate-200 rounded-tl-none font-medium'
             }`}>
               {m.content}
             </div>
 
             {m.role === 'user' && (
-              <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-700 shrink-0 mt-1">
+              <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 mt-1 shadow-sm">
                 <User className="w-4 h-4" />
               </div>
             )}
@@ -96,27 +98,28 @@ export const AIChatPage: React.FC = () => {
         ))}
 
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-orange-600 font-bold animate-pulse p-2">
-            <Sparkles className="w-4 h-4 text-orange-500" /> Groq AI is generating response...
+          <div className="flex items-center gap-2 text-xs text-[#FFBA00] font-black animate-pulse p-2">
+            <Sparkles className="w-4 h-4 text-[#FFBA00]" /> Groq AI is generating response...
           </div>
         )}
-      </div>
+      </SaaSCard>
 
-      <form onSubmit={handleSend} className="glass-panel p-2 border border-slate-200 flex items-center gap-2 bg-white">
+      <form onSubmit={handleSend} className="flex gap-2">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={`Ask anything about ${destination}, weather, medical safety, or local food...`}
-          className="flex-1 glass-input border-0 bg-transparent text-xs sm:text-sm focus:ring-0 text-slate-900"
+          placeholder={`Ask anything about ${destination} route, weather, hotels, or health tips...`}
+          className="flex-1 px-4 py-3 rounded-2xl bg-white border border-slate-300 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FFBA00]/40"
         />
-        <button
+        <SaaSButton
           type="submit"
           disabled={loading || !input.trim()}
-          className="p-3 rounded-xl bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 transition-all font-bold shadow-md"
+          variant="gold"
+          size="md"
         >
-          <Send className="w-4 h-4" />
-        </button>
+          <Send className="w-4 h-4 text-black" />
+        </SaaSButton>
       </form>
     </div>
   );

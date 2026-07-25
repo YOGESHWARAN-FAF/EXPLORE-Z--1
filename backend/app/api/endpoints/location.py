@@ -1,12 +1,23 @@
 import traceback
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Dict, Any
 from app.models.tracking import MemberLocation, LocationUpdateRequest
 from app.services.geofence_service import evaluate_group_tracking
+from app.services.route_service import autocomplete_locations
 from app.core.security import get_current_user
 from app.core.firebase import update_live_location_in_firebase, get_group_locations_from_firebase
 
 router = APIRouter()
+
+@router.get("/autocomplete")
+async def autocomplete_endpoint(query: str = Query(..., min_length=1)):
+    """Provides Nominatim location search autocomplete for starting location & destination inputs."""
+    try:
+        results = await autocomplete_locations(query)
+        return {"query": query, "suggestions": results}
+    except Exception as e:
+        print(f"❌ [API ERROR /location/autocomplete]: {e}")
+        return {"query": query, "suggestions": []}
 
 @router.post("/update")
 async def update_member_location(data: LocationUpdateRequest, user: dict = Depends(get_current_user)):
@@ -21,13 +32,11 @@ async def update_member_location(data: LocationUpdateRequest, user: dict = Depen
             battery_level=data.battery_level or 90
         )
 
-        # Write directly to Firebase Realtime DB
         update_live_location_in_firebase(data.trip_id, loc.model_dump())
 
-        # Read active members from Firebase
         fb_locs = get_group_locations_from_firebase(data.trip_id)
         parsed_locs = [MemberLocation(**m) for m in fb_locs.values()] if fb_locs else [loc]
-        
+
         status_report = evaluate_group_tracking(parsed_locs, geofence_radius_km=5.0)
 
         return {
@@ -50,7 +59,6 @@ async def get_group_live_status(trip_id: str, radius_km: float = 5.0, user: dict
             parsed_locs = [MemberLocation(**m) for m in fb_locs.values()]
             return evaluate_group_tracking(parsed_locs, geofence_radius_km=radius_km)
 
-        # Return clean empty group status if no live members registered yet in Firebase
         return evaluate_group_tracking([], geofence_radius_km=radius_km)
     except Exception as e:
         print(f"❌ [API ERROR /location/group/{trip_id}] Telemetry query failed:")

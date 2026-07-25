@@ -13,6 +13,12 @@ class Place(BaseModel):
     website: Optional[str] = None
     phone: Optional[str] = None
     opening_hours: Optional[str] = "09:00 AM - 08:00 PM"
+    is_open_now: bool = True
+    distance_from_route_km: float = 0.5
+    visit_duration: Optional[str] = "45 Mins"
+    parking_available: bool = True
+    family_friendly: bool = True
+    wifi_available: bool = True
     images: List[str] = []
     safety_accessible: bool = True
     crowd_level: Optional[str] = "Moderate" # Low, Moderate, High

@@ -89,22 +89,15 @@ export const PlacesGrid: React.FC<PlacesProps> = ({ places, title = "Live Apify 
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((place) => (
-            <div key={place.id} className="glass-card overflow-hidden group border border-slate-200 flex flex-col justify-between hover:border-orange-400 bg-white">
+            <div key={place.id} className="glass-card overflow-hidden group border border-slate-200 flex flex-col justify-between hover:border-orange-400 bg-white p-5 space-y-3 rounded-2xl">
               <div>
-                <div className="relative h-44 overflow-hidden bg-slate-100">
-                  <img
-                    src={place.images[0] || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600'}
-                    alt={place.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
-                  
-                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-slate-900 shadow-sm border border-slate-200 backdrop-blur-md flex items-center gap-1">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-900 border border-slate-200 flex items-center gap-1">
                     {getCategoryIcon(place.category)}
                     {place.category}
                   </span>
 
-                  <span className="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-extrabold bg-amber-400 text-slate-950 flex items-center gap-1 shadow-sm">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-400 text-slate-950 flex items-center gap-1 shadow-sm">
                     <Star className="w-3.5 h-3.5 fill-slate-950" /> {place.rating}
                   </span>
                 </div>

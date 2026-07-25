@@ -4,10 +4,11 @@ from app.models.member import MemberCreate, Member
 from app.models.place import Place
 
 class TripRequest(BaseModel):
-    destination: str # e.g. Ooty, Manali, Goa, Paris
-    boundary_km: float = 5.0 # 3, 5, 7, 10
-    duration: str = "1 Day" # 2 Hours, 5 Hours, 1 Day, 2 Days, 3 Days
-    budget: float = 5000.0 # INR / USD
+    origin: str = "Chennai"
+    destination: str = "Salem"
+    travel_mode: str = "Car" # Car, Bike, Bus, Walking, Cycling
+    duration: str = "3 Days" # Same Day, 2 Days, 3 Days, 5 Days, 1 Week
+    budget: float = 10000.0
     num_members: int = 1
     members: List[MemberCreate] = []
 
@@ -15,6 +16,8 @@ class ScheduleItem(BaseModel):
     time: str
     activity: str
     location: str
+    km_mark: Optional[float] = None
+    category: Optional[str] = "Activity" # Departure, Breakfast, Tea, Lunch, Tourist, Photo, Dinner, Hotel
     notes: Optional[str] = None
     suitable_for_all: bool = True
     health_advisory: Optional[str] = None
@@ -35,28 +38,51 @@ class AIHealthRecommendation(BaseModel):
     recommended_activities: List[str]
     special_care_tips: List[str]
 
+class SmartHotelRecommendation(BaseModel):
+    day: str
+    target_km: float
+    hotel_name: str
+    location: str
+    rating: float
+    reasons: List[str] # Safe parking, 24h check-in, family friendly, budget friendly
+
 class TripPlanResult(BaseModel):
     trip_id: str
+    origin: str
     destination: str
+    travel_mode: str
     duration: str
     budget: float
-    safety_score: int # 0 - 100
+    total_distance_km: float = 0.0
+    duration_hours: float = 0.0
+    expected_arrival_time: str = "05:30 PM"
+    safety_score: int = 90 # 0 - 100
     trip_summary: str
+    route_geometry: List[List[float]] = [] # [[lat, lon], ...]
+    checkpoints: List[Dict[str, Any]] = []
     weather_overview: Dict[str, Any] = {}
     budget_breakdown: BudgetBreakdown
     health_recommendations: List[AIHealthRecommendation] = []
     best_tourist_places: List[Place] = []
     best_hotels: List[Place] = []
     best_restaurants: List[Place] = []
-    best_bakeries: List[Place] = []
+    tea_and_bakeries: List[Place] = []
     hospitals: List[Place] = []
-    bus_stands: List[Place] = []
+    petrol_stations: List[Place] = []
     ev_charging: List[Place] = []
     parking: List[Place] = []
-    petrol_stations: List[Place] = []
+    viewpoints: List[Place] = []
+    rest_stops: List[Place] = []
+    smart_tea_stops: List[Place] = []
+    smart_lunch_stops: List[Place] = []
+    along_route_attractions: List[Place] = []
+    emergency_stops: List[Place] = []
+    destination_explorer_top3: Dict[str, List[Place]] = {}
     travel_schedule: List[ScheduleItem] = []
-    crowd_prediction: str = "Moderate crowd expected around midday."
-    weather_advice: str = "Comfortable weather. Light jacket recommended for evening."
+    daily_itineraries: Dict[str, List[ScheduleItem]] = {}
+    smart_hotel_plan: List[SmartHotelRecommendation] = []
+    crowd_prediction: str = "Low to Moderate crowd expected."
+    weather_advice: str = "Pleasant weather along travel route."
     emergency_suggestions: List[str] = []
     hidden_gems: List[str] = []
     local_foods: List[str] = []

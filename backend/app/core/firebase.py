@@ -19,12 +19,12 @@ def init_firebase():
                 'databaseURL': settings.FIREBASE_DATABASE_URL
             })
             _firebase_initialized = True
-            print(f"🔥 [FIREBASE INIT SUCCESS] Connected to Firebase Project: {cred_dict.get('project_id')} | Database: {settings.FIREBASE_DATABASE_URL}")
+            print(f"[FIREBASE INIT SUCCESS] Connected to Firebase Project: {cred_dict.get('project_id')} | Database: {settings.FIREBASE_DATABASE_URL}")
         except Exception as e:
-            print(f"❌ [FIREBASE INIT ERROR] Failed to initialize Firebase Admin SDK:")
+            print(f"[FIREBASE INIT ERROR] Failed to initialize Firebase Admin SDK:")
             traceback.print_exc()
     else:
-        print("⚠️ [FIREBASE WARNING] No FIREBASE_CREDENTIALS_JSON provided.")
+        print("[FIREBASE WARNING] No FIREBASE_CREDENTIALS_JSON provided.")
 
 init_firebase()
 
@@ -48,21 +48,43 @@ def verify_firebase_id_token(token: str) -> dict:
 # --- Real Realtime Database Operations ---
 
 def save_trip_to_firebase(trip_dict: dict):
-    """Persists a complete AI generated trip plan to Firebase Realtime Database."""
+    """Persists a complete AI generated trip plan to Firebase Realtime Database with payload optimization."""
     if not _firebase_initialized:
         print("❌ [FIREBASE DB ERROR] Cannot save trip: Firebase Admin SDK not initialized")
         return
     try:
         trip_id = trip_dict.get("trip_id")
-        if trip_id:
-            ref = db.reference(f"trips/{trip_id}")
-            ref.set(trip_dict)
-            saved_ref = db.reference(f"saved_trips/{trip_id}")
-            saved_ref.set(trip_dict)
-            print(f"✅ [FIREBASE DB] Trip {trip_id} written to /trips/{trip_id} & /saved_trips/{trip_id}")
+        if not trip_id:
+            return
+
+        # Create lightweight payload for Firebase RTDB to fit single request limits
+        fb_payload = dict(trip_dict)
+
+        # Downsample route_geometry array if too large for single RTDB request
+        raw_geom = fb_payload.get("route_geometry") or []
+        if isinstance(raw_geom, list) and len(raw_geom) > 150:
+            step = max(1, len(raw_geom) // 150)
+            sampled_geom = raw_geom[::step]
+            if raw_geom[-1] not in sampled_geom:
+                sampled_geom.append(raw_geom[-1])
+            fb_payload["route_geometry"] = sampled_geom
+
+        # Write to /trips/{trip_id}
+        try:
+            db.reference(f"trips/{trip_id}").set(fb_payload)
+            print(f"✅ [FIREBASE DB] Trip {trip_id} written to /trips/{trip_id}")
+        except Exception as e1:
+            print(f"⚠️ [FIREBASE DB WARN] Could not write to /trips/{trip_id}: {e1}")
+
+        # Write to /saved_trips/{trip_id}
+        try:
+            db.reference(f"saved_trips/{trip_id}").set(fb_payload)
+            print(f"✅ [FIREBASE DB] Trip {trip_id} written to /saved_trips/{trip_id}")
+        except Exception as e2:
+            print(f"⚠️ [FIREBASE DB WARN] Could not write to /saved_trips/{trip_id}: {e2}")
+
     except Exception as e:
-        print(f"❌ [FIREBASE DB ERROR] Error writing trip {trip_dict.get('trip_id')} to Firebase Realtime DB:")
-        traceback.print_exc()
+        print(f"❌ [FIREBASE DB ERROR] Error in save_trip_to_firebase: {e}")
 
 def get_saved_trips_from_firebase() -> list:
     """Retrieves saved trips directly from Firebase Realtime DB."""
@@ -123,3 +145,31 @@ def trigger_sos_in_firebase(sos_dict: dict):
     except Exception as e:
         print("❌ [FIREBASE DB ERROR] Error logging SOS to Firebase:")
         traceback.print_exc()
+
+def get_cached_poi_data_from_firebase(cache_key: str) -> dict:
+    """Reads shared route POI data from Firebase Realtime DB under /common_poi_cache/{cache_key} for all users."""
+    if not _firebase_initialized or not cache_key:
+        return None
+    try:
+        clean_key = cache_key.lower().replace(" ", "_").replace("/", "_")
+        ref = db.reference(f"common_poi_cache/{clean_key}")
+        snapshot = ref.get()
+        if snapshot and isinstance(snapshot, dict):
+            print(f"⚡ [FIREBASE COMMON CACHE HIT] Reusing cached route POI data for key: '{clean_key}'")
+            return snapshot
+    except Exception as e:
+        print(f"⚠️ [FIREBASE CACHE WARN] Could not read POI cache for {cache_key}: {e}")
+    return None
+
+def save_cached_poi_data_to_firebase(cache_key: str, poi_data: dict):
+    """Saves route POI data to Firebase Realtime DB under /common_poi_cache/{cache_key} so all users reuse it without repeat API calls."""
+    if not _firebase_initialized or not cache_key:
+        return
+    try:
+        clean_key = cache_key.lower().replace(" ", "_").replace("/", "_")
+        ref = db.reference(f"common_poi_cache/{clean_key}")
+        ref.set(poi_data)
+        print(f"💾 [FIREBASE COMMON CACHE WRITE] Cached shared route POI data for key: '{clean_key}'")
+    except Exception as e:
+        print(f"⚠️ [FIREBASE CACHE WARN] Could not write POI cache for {cache_key}: {e}")
+
