@@ -12,9 +12,12 @@ def init_firebase():
     if _firebase_initialized:
         return
     
-    if settings.FIREBASE_CREDENTIALS_JSON:
+    if settings.FIREBASE_CREDENTIALS_JSON and len(settings.FIREBASE_CREDENTIALS_JSON.strip()) > 10:
         try:
-            cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
+            raw_cred = settings.FIREBASE_CREDENTIALS_JSON.strip()
+            if "\\n" in raw_cred and "\n" not in raw_cred:
+                raw_cred = raw_cred.replace("\\n", "\n")
+            cred_dict = json.loads(raw_cred)
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred, {
                 'databaseURL': settings.FIREBASE_DATABASE_URL
@@ -22,12 +25,15 @@ def init_firebase():
             _firebase_initialized = True
             print(f"[FIREBASE INIT SUCCESS] Connected to Firebase Project: {cred_dict.get('project_id')} | Database: {settings.FIREBASE_DATABASE_URL}")
         except Exception as e:
-            print(f"[FIREBASE INIT ERROR] Failed to initialize Firebase Admin SDK:")
-            traceback.print_exc()
+            print(f"[FIREBASE INIT WARNING] Could not initialize Firebase Admin SDK: {e}")
+            _firebase_initialized = False
     else:
-        print("[FIREBASE WARNING] No FIREBASE_CREDENTIALS_JSON provided.")
+        print("[FIREBASE WARNING] No valid FIREBASE_CREDENTIALS_JSON provided.")
 
-init_firebase()
+try:
+    init_firebase()
+except Exception as _f_err:
+    print(f"[FIREBASE SAFE LOAD WARN] {_f_err}")
 
 def verify_firebase_id_token(token: str) -> dict:
     """Strictly verifies Firebase ID token using Firebase Admin Auth."""

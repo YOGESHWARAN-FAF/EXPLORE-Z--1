@@ -11,7 +11,17 @@ if root_dir not in sys.path:
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
-from backend.app.main import app as fastapi_app
+try:
+    from backend.app.main import app as fastapi_app
+except Exception as e1:
+    try:
+        from app.main import app as fastapi_app
+    except Exception as e2:
+        from fastapi import FastAPI
+        fastapi_app = FastAPI()
+        @fastapi_app.get("/{full_path:path}")
+        async def fallback_err(full_path: str):
+            return {"status": "error", "message": "FastAPI import error", "details": str(e1)}
 
 try:
     from mangum import Mangum
