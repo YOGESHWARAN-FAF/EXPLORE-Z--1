@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: smart-tourist-planner-backend
+    env: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ENVIRONMENT
+        value: production
+      - key: GROQ_MODEL
+        value: llama-3.1-8b-instant
+      - key: FIREBASE_DATABASE_URL
+        value: https://tourism-e45c9-default-rtdb.asia-southeast1.firebasedatabase.app
