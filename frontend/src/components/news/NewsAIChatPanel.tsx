@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Sparkles, User, ShieldAlert, ArrowRight, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -151,6 +151,11 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
       </div>
     );
   };
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   return (
     <AnimatePresence>
@@ -159,10 +164,10 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 400 }}
         transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-        className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col"
+        className="fixed inset-y-0 right-0 w-full sm:max-w-md bg-white border-l border-slate-200 shadow-2xl z-[60] flex flex-col h-[100dvh]"
       >
         {/* Top Header */}
-        <div className="p-4 border-b border-slate-200 bg-[#FFBA00] text-black flex items-center justify-between shadow-sm">
+        <div className="p-4 border-b border-slate-200 bg-[#FFBA00] text-black flex items-center justify-between shadow-sm shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black shadow-md">
               <Bot className="w-5 h-5 text-[#FFBA00]" />
@@ -183,11 +188,11 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
         </div>
 
         {/* Context Article Banner */}
-        <div className="p-3 bg-[#FFBA00]/10 border-b border-[#FFBA00]/30 flex items-start gap-3">
+        <div className="p-3 bg-[#FFBA00]/10 border-b border-[#FFBA00]/30 flex items-start gap-3 shrink-0">
           <img
             src={selectedArticle.image}
             alt={selectedArticle.title}
-            className="w-14 h-14 rounded-lg object-cover flex-shrink-0 shadow-sm border border-[#FFBA00]/30"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover flex-shrink-0 shadow-sm border border-[#FFBA00]/30"
           />
           <div className="min-w-0 flex-1">
             <span className="text-[9px] uppercase tracking-wider font-black text-slate-900 block">
@@ -199,11 +204,11 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
         </div>
 
         {/* Chat Conversation Body */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar bg-slate-50">
+        <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-4 custom-scrollbar bg-slate-50 min-h-0">
           {messages.length === 0 ? (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-[#FFBA00] text-black flex items-center justify-center mx-auto shadow-sm font-black">
-                <Sparkles className="w-6 h-6 animate-pulse" />
+            <div className="text-center py-4 space-y-3">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFBA00] text-black flex items-center justify-center mx-auto shadow-sm font-black">
+                <Sparkles className="w-5 h-5 animate-pulse" />
               </div>
               <div>
                 <h4 className="text-sm font-black text-slate-900 font-outfit">Ask AI about this news</h4>
@@ -213,7 +218,7 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
               </div>
 
               {/* Quick Prompts */}
-              <div className="space-y-2 text-left pt-2">
+              <div className="space-y-2 text-left pt-1">
                 <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Suggested Questions:</span>
                 {suggestedPrompts.map((p, idx) => (
                   <button
@@ -240,7 +245,7 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
                 )}
 
                 <div
-                  className={`max-w-[85%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
+                  className={`max-w-[85%] p-3 sm:p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                     m.sender === 'user'
                       ? 'bg-[#FFBA00] text-black font-black rounded-br-none shadow-md'
                       : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none shadow-sm font-medium'
@@ -271,10 +276,12 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
               <span>Groq Llama 3.1 8B analyzing trip safety...</span>
             </div>
           )}
+
+          <div ref={chatEndRef} />
         </div>
 
-        {/* Input Footer */}
-        <div className="p-3 bg-white border-t border-slate-200">
+        {/* Input Footer: Mobile clear bottom spacing (pb-20 on mobile, pb-3 on md) */}
+        <div className="p-3 pb-20 md:pb-3 bg-white border-t border-slate-200 shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -287,14 +294,14 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               placeholder="Ask how this news impacts your trip..."
-              className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FFBA00]/40 font-medium"
+              className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FFBA00]/40 font-semibold bg-white"
             />
             <button
               type="submit"
               disabled={!inputQuery.trim() || isLoading}
-              className="p-2.5 rounded-xl bg-[#FFBA00] hover:bg-[#FF9F00] text-black disabled:opacity-50 transition-all shadow-md font-black cursor-pointer"
+              className="min-w-[44px] min-h-[44px] p-2.5 rounded-xl bg-[#FFBA00] hover:bg-[#FF9F00] text-black disabled:opacity-50 transition-all shadow-md font-black cursor-pointer flex items-center justify-center shrink-0"
             >
-              <Send className="w-4 h-4 text-black" />
+              <Send className="w-4 h-4 text-black stroke-[2.5]" />
             </button>
           </form>
         </div>
