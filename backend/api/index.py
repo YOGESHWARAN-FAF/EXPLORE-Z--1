@@ -24,7 +24,7 @@ except Exception as e1:
 
 try:
     from mangum import Mangum
-    handler = Mangum(fastapi_app)
+    handler = Mangum(fastapi_app, lifespan="off")
 except Exception:
     handler = fastapi_app
 
