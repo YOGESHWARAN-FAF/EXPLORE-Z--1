@@ -3,7 +3,29 @@ import json
 import traceback
 import random
 from typing import List, Dict, Any, Tuple, Optional
+from urllib.parse import quote_plus
 from app.core.config import settings
+
+def _normalize_place_aliases(dest: str) -> Tuple[str, List[str]]:
+    """Returns (gnews_query_string, list_of_matching_keywords)."""
+    dest_clean = dest.strip()
+    dest_lower = dest_clean.lower()
+
+    if any(k in dest_lower for k in ["udhagamandalam", "ooty", "ootacamund", "udhagai", "nilgiri"]):
+        return "(Ooty OR Udhagamandalam OR Nilgiris)", ["ooty", "udhagamandalam", "ootacamund", "udhagai", "nilgiri", "nilgiris", "botanical", "doddabetta", "pykara", "coonoor"]
+    elif any(k in dest_lower for k in ["yercaud", "shevaroy"]):
+        return "(Yercaud OR Shevaroy OR Salem)", ["yercaud", "shevaroy", "salem", "kiliyur"]
+    elif any(k in dest_lower for k in ["kodaikanal", "kodai"]):
+        return "(Kodaikanal OR Kodai)", ["kodaikanal", "kodai", "pillar rocks"]
+    elif "munnar" in dest_lower:
+        return "(Munnar OR Idukki)", ["munnar", "idukki", "tea estate"]
+    elif "manali" in dest_lower:
+        return "(Manali OR Kullu)", ["manali", "kullu", "solang"]
+    elif "goa" in dest_lower:
+        return "(Goa OR Panaji)", ["goa", "panaji", "calangute", "beach"]
+
+    words = [w for w in dest_lower.split() if len(w) > 2]
+    return dest_clean, [dest_lower] + words
 
 async def fetch_destination_news(destination: str) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
     """
@@ -13,18 +35,18 @@ async def fetch_destination_news(destination: str) -> Tuple[List[Dict[str, Any]]
     articles: List[Dict[str, Any]] = []
     gnews_key = settings.GNEWS_API_KEY or "17249e01f0d55ed0f6761ccc53e7e5f8"
 
+    query_str, keywords = _normalize_place_aliases(destination)
+
     # ── 1. Try GNews API ──────────────────────────────────────────────────────
     if gnews_key:
-        # Query GNews for target destination cleanly
-        query_str = destination.strip()
         url = (
             f"https://gnews.io/api/v4/search"
-            f"?q={query_str}"
+            f"?q={quote_plus(query_str)}"
             f"&max=10&lang=en"
             f"&apikey={gnews_key}"
         )
         try:
-            print(f"📰 [GNEWS] Fetching top 10 news for '{destination}'...")
+            print(f"📰 [GNEWS] Fetching top 10 news for '{destination}' (Query: {query_str})...")
             async with httpx.AsyncClient(timeout=8.0) as client:
                 res = await client.get(url)
             print(f"📰 [GNEWS] Status: {res.status_code}")
@@ -32,16 +54,14 @@ async def fetch_destination_news(destination: str) -> Tuple[List[Dict[str, Any]]
                 data = res.json()
                 raw = data.get("articles", [])
                 
-                # Filter for articles relevant to the target destination
-                dest_lower = destination.lower()
+                # Filter for articles relevant to target destination keywords
                 relevant_raw = []
                 for a in raw:
                     t = (a.get("title") or "").lower()
                     d = (a.get("description") or "").lower()
-                    if dest_lower in t or dest_lower in d or any(word in t or word in d for word in dest_lower.split() if len(word) > 3):
+                    if any(kw in t or kw in d for kw in keywords):
                         relevant_raw.append(a)
                 
-                # Use relevant articles or top raw articles if relevant set is non-empty
                 target_raw = relevant_raw if relevant_raw else raw
                 
                 if target_raw:
@@ -251,22 +271,31 @@ async def news_ai_chat_query(
         body = {
             "model": settings.GROQ_MODEL,
             "messages": [
-                {"role": "system", "content": "You are a concise, empathetic AI travel news assistant."},
+                {
+                    "role": "system", 
+                    "content": (
+                        "You are a professional AI Travel & News Safety Assistant for the AI Tourist Planner app. "
+                        "Provide clean, empathetic, structured answers with emojis, short line breaks, and clear bullet points. "
+                        "CRITICAL CONSTRAINT: DO NOT use raw markdown asterisks like ** or ***. Use emojis, clear headers, and bullet points instead for formatting."
+                    )
+                },
                 {"role": "user", "content": prompt},
             ],
-            "temperature": 0.4,
-            "max_tokens": 300,
+            "temperature": 0.3,
+            "max_tokens": 400,
         }
         async with httpx.AsyncClient(timeout=10.0) as client:
             res = await client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=body)
         if res.status_code == 200:
-            return res.json()["choices"][0]["message"]["content"].strip()
+            raw_content = res.json()["choices"][0]["message"]["content"].strip()
+            clean_content = raw_content.replace("***", "").replace("**", "").replace("* ", "• ")
+            return clean_content
     except Exception as e:
         print("❌ [GROQ CHAT EXCEPTION]:", e)
 
     return (
-        f"Based on the latest updates for {selected_news.get('title')}, overall travel to {destination} remains smooth. "
-        "Ensure you check local route conditions before embarking on high-altitude excursions."
+        f"Based on the latest updates for {selected_news.get('title')}, overall travel to {destination} remains smooth 🚗 "
+        "Ensure you check local route conditions before embarking on high-altitude excursions ⛰️"
     )
 
 
@@ -547,22 +576,22 @@ def _generate_fallback_news(destination: str) -> List[Dict[str, Any]]:
             }
         ]
 
-    # ── 2. OOTY SPECIFIC NEWS ────────────────────────────────────────────────
-    elif "ooty" in dest_lower:
+    # ── 2. OOTY / UDHAGAMANDALAM SPECIFIC NEWS ────────────────────────────────
+    elif any(k in dest_lower for k in ["ooty", "udhagamandalam", "ootacamund", "udhagai", "nilgiri"]):
         return [
             {
                 "id": "news-ooty-1",
-                "title": f"Nilgiri Mountain Railway Heritage Toy Train Running Full Capacity in Ooty",
-                "description": "UNESCO World Heritage Toy Train services operate smoothly between Mettupalayam, Coonoor, and Ooty.",
-                "content": "Heritage toy train tickets are booked at full capacity this week as tourists enjoy panoramic tea valley views.",
+                "title": f"Nilgiri Mountain Railway Heritage Toy Train Running Full Capacity in Udhagamandalam (Ooty)",
+                "description": f"UNESCO World Heritage Toy Train services operate smoothly between Mettupalayam, Coonoor, and Udhagamandalam.",
+                "content": f"Heritage toy train tickets are booked at full capacity this week as tourists enjoy panoramic tea valley views in Udhagamandalam.",
                 "url": "https://gnews.io", "image": _fallback_image(0), "source": "Southern Railway", "author": "Rail Desk", "publishedAt": "2026-07-23T07:30:00Z", "published_at": "Today", "category": "Tourism", "language": "en", "country": "in", "reading_time": "3 min read"
             },
             {
                 "id": "news-ooty-2",
-                "title": f"Government Botanical Garden & Rose Garden Prepare for Weekend Floral Fair in Ooty",
-                "description": "Terraced lawns and glasshouse flower displays open with paved wheelchair access for visitors.",
-                "content": "Over 200 varieties of exotic roses and greenhouse orchids are on display at the Government Botanical Garden.",
-                "url": "https://gnews.io", "image": _fallback_image(7), "source": "Horticulture Dept", "author": "Priya Sharma", "publishedAt": "2026-07-23T06:45:00Z", "published_at": "Today", "category": "Festival", "language": "en", "country": "in", "reading_time": "2 min read"
+                "title": f"Government Botanical Garden & Rose Garden Prepare for Weekend Floral Fair in Udhagamandalam",
+                "description": f"Terraced lawns and glasshouse flower displays open with paved wheelchair access for visitors in Udhagamandalam.",
+                "content": f"Over 200 varieties of exotic roses and greenhouse orchids are on display at the Government Botanical Garden in Udhagamandalam.",
+                "url": "https://gnews.io", "image": _fallback_image(7), "source": "Nilgiris Horticulture Dept", "author": "Priya Sharma", "publishedAt": "2026-07-23T06:45:00Z", "published_at": "Today", "category": "Festival", "language": "en", "country": "in", "reading_time": "2 min read"
             },
             {
                 "id": "news-ooty-3",

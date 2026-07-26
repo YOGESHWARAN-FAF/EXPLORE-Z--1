@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import api from '../../services/api';
 import { GNewsArticle, OverallAIRecommendation, NewsFeedResponse } from '../../types/news';
 import { AIExplanationModal } from './AIExplanationModal';
 import { NewsAIChatPanel } from './NewsAIChatPanel';
@@ -96,20 +97,21 @@ export const GNewsLiveFeed: React.FC<GNewsLiveFeedProps> = ({
     setIsError(false);
 
     try {
-      const response = await axios.get<NewsFeedResponse>(`/api/news/feed?destination=${encodeURIComponent(targetDest)}`).catch(async () => {
-        // Fallback retry endpoint
+      const response = await api.get<NewsFeedResponse>(`/news/feed?destination=${encodeURIComponent(targetDest)}`).catch(async () => {
+        return await api.get<NewsFeedResponse>(`/news/latest?destination=${encodeURIComponent(targetDest)}`);
+      }).catch(async () => {
         return await axios.get<NewsFeedResponse>(`/api/v1/news/feed?destination=${encodeURIComponent(targetDest)}`);
       });
 
       const data = response.data;
-      setArticles(data.articles || []);
+      setArticles(data.articles || (data as any).news || []);
       setNewsSummary(data.news_summary || (data as any).summary || '');
       setOverallRecommendation(data.overall_ai_recommendation);
       setRefreshCountdown(180); // Reset timer
     } catch (err) {
       console.error("Failed to fetch news from backend:", err);
       setIsError(true);
-      toast.error("Failed to fetch live GNews. Showing cached news feed.");
+      toast.error(`Failed to fetch live GNews for ${targetDest}. Showing cached news.`);
     } finally {
       setIsLoading(false);
     }

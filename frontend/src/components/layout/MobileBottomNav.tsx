@@ -14,7 +14,7 @@ export const MobileBottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-3 left-4 right-4 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200 shadow-2xl rounded-full px-2 py-2 text-slate-900 flex items-center justify-around md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-2xl border-t border-slate-200 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] px-2 py-1.5 md:hidden flex items-center justify-between h-16 text-slate-900">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
@@ -23,14 +23,14 @@ export const MobileBottomNav: React.FC = () => {
           <Link
             key={item.path}
             to={item.path}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-full transition-all duration-300 active:scale-95 min-w-[54px] min-h-[44px] ${
+            className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all duration-300 active:scale-95 h-13 mx-0.5 ${
               isActive
-                ? 'bg-[#FFBA00] text-black font-black shadow-md scale-105'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-[#FFBA00] text-black font-black shadow-md shadow-[#FFBA00]/25'
+                : 'text-slate-500 hover:text-slate-900 font-semibold'
             }`}
           >
-            <Icon className={`w-5 h-5 ${isActive ? 'text-black' : 'text-slate-600'}`} />
-            <span className={`text-[10px] tracking-tight mt-0.5 ${isActive ? 'font-black text-black' : 'font-semibold'}`}>
+            <Icon className={`w-5 h-5 ${isActive ? 'text-black stroke-[2.5]' : 'text-slate-500'}`} />
+            <span className={`text-[10px] tracking-tight mt-0.5 ${isActive ? 'font-black text-black' : 'font-bold'}`}>
               {item.label}
             </span>
           </Link>

@@ -1,4 +1,5 @@
 import traceback
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
 from app.models.trip import TripRequest, TripPlanResult
@@ -9,6 +10,7 @@ from app.services.places_service import generate_route_checkpoint_places
 from app.services.groq_service import generate_ai_trip_plan
 from app.core.firebase import (
     save_trip_to_firebase, get_saved_trips_from_firebase,
+    get_user_search_history_from_firebase,
     get_cached_poi_data_from_firebase, save_cached_poi_data_to_firebase
 )
 from app.core.security import get_current_user
@@ -26,7 +28,7 @@ async def generate_trip_endpoint(trip_req: TripRequest, user: dict = Depends(get
     5. Fetch Open-Meteo Weather along route and GNews for cities along route.
     6. Evaluate Medical & Health rules for all team members.
     7. Process structured JSON with Groq LLM (llama-3.1-8b-instant).
-    8. Save result to Firebase Realtime DB and return.
+    8. Save result to Firebase Realtime DB (both global and under user UID) and return.
     """
     origin_name = trip_req.origin or "Chennai"
     dest_name = trip_req.destination or "Salem"
@@ -73,7 +75,11 @@ async def generate_trip_endpoint(trip_req: TripRequest, user: dict = Depends(get
         )
 
         # Persist directly to Firebase Realtime Database
-        save_trip_to_firebase(result.model_dump())
+        user_uid = user.get("uid") if user else None
+        trip_payload = result.model_dump()
+        trip_payload["searched_at"] = datetime.now().isoformat()
+        
+        save_trip_to_firebase(trip_payload, user_uid=user_uid)
 
         print(f"✅ [API RESPONSE /planner/generate] Route trip generated! Trip ID: {result.trip_id} | Total Dist: {result.total_distance_km} KM | Safety: {result.safety_score}")
         return result
@@ -97,6 +103,26 @@ async def get_saved_trips(user: dict = Depends(get_current_user)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
 
+@router.get("/history", response_model=List[TripPlanResult])
+async def get_user_search_history(user: dict = Depends(get_current_user)):
+    """Reads searched plans history specifically stored under the user's UID in Firebase."""
+    user_uid = user.get("uid") if user else None
+    print(f"📥 [API REQUEST /planner/history] Fetching search history for UID '{user_uid}' from Firebase")
+    try:
+        if user_uid:
+            history = get_user_search_history_from_firebase(user_uid)
+            if history:
+                return [TripPlanResult(**t) for t in history]
+        # Fallback to general saved trips if user history is empty
+        fb_trips = get_saved_trips_from_firebase()
+        if fb_trips:
+            return [TripPlanResult(**t) for t in fb_trips]
+        return []
+    except Exception as e:
+        print("❌ [API ERROR /planner/history] Failed to fetch search history:")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+
 @router.get("/{trip_id}", response_model=TripPlanResult)
 async def get_trip_by_id(trip_id: str, user: dict = Depends(get_current_user)):
     """Fetches a specific trip by ID from Firebase Realtime DB."""
@@ -113,3 +139,4 @@ async def get_trip_by_id(trip_id: str, user: dict = Depends(get_current_user)):
         print(f"❌ [API ERROR /planner/{trip_id}] Fetch failed:")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Trip query error: {str(e)}")
+

@@ -101,6 +101,7 @@ export interface RouteCheckpoint {
 
 export interface TripPlan {
   trip_id: string;
+  searched_at?: string;
   origin: string;
   destination: string;
   travel_mode: string;
@@ -160,6 +161,8 @@ interface TripContextType {
   setActiveTrip: (trip: TripPlan | null) => void;
   savedTrips: TripPlan[];
   setSavedTrips: React.Dispatch<React.SetStateAction<TripPlan[]>>;
+  searchHistory: TripPlan[];
+  setSearchHistory: React.Dispatch<React.SetStateAction<TripPlan[]>>;
   isGenerating: boolean;
   setIsGenerating: (v: boolean) => void;
   selectedMapPlace: PlaceItem | null;
@@ -171,12 +174,14 @@ const TripContext = createContext<TripContextType | undefined>(undefined);
 export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTrip, setActiveTrip] = useState<TripPlan | null>(null);
   const [savedTrips, setSavedTrips] = useState<TripPlan[]>([]);
+  const [searchHistory, setSearchHistory] = useState<TripPlan[]>([]);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [selectedMapPlace, setSelectedMapPlace] = useState<PlaceItem | null>(null);
 
   return (
     <TripContext.Provider value={{
-      activeTrip, setActiveTrip, savedTrips, setSavedTrips, isGenerating, setIsGenerating,
+      activeTrip, setActiveTrip, savedTrips, setSavedTrips,
+      searchHistory, setSearchHistory, isGenerating, setIsGenerating,
       selectedMapPlace, setSelectedMapPlace
     }}>
       {children}

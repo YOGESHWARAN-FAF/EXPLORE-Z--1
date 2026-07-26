@@ -109,6 +109,49 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
     }
   };
 
+  // Formatter to strip raw asterisks (** and ***) and format with clean emojis & bullet points
+  const renderFormattedContent = (content: string) => {
+    const cleanedText = content
+      .replace(/\*\*\*/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '•');
+
+    const lines = cleanedText.split('\n');
+
+    return (
+      <div className="space-y-1.5 text-slate-800 leading-relaxed text-xs sm:text-sm">
+        {lines.map((line, idx) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={idx} className="h-0.5" />;
+
+          if (trimmed.startsWith('•')) {
+            return (
+              <div key={idx} className="flex items-start gap-1.5 pl-1">
+                <span className="text-[#FFBA00] font-black shrink-0 mt-0.5">•</span>
+                <span>{trimmed.substring(1).trim()}</span>
+              </div>
+            );
+          }
+
+          if (/^\d+\./.test(trimmed)) {
+            const num = trimmed.split('.')[0];
+            const rest = trimmed.substring(trimmed.indexOf('.') + 1).trim();
+            return (
+              <div key={idx} className="flex items-start gap-1.5 pl-1">
+                <span className="w-4 h-4 rounded-full bg-[#FFBA00]/20 text-black font-black text-[9px] flex items-center justify-center shrink-0 mt-0.5 border border-[#FFBA00]/40">
+                  {num}
+                </span>
+                <span className="font-bold text-slate-900">{rest}</span>
+              </div>
+            );
+          }
+
+          return <p key={idx} className="font-medium text-slate-700">{trimmed}</p>;
+        })}
+      </div>
+    );
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -197,13 +240,13 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
                 )}
 
                 <div
-                  className={`max-w-[82%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
+                  className={`max-w-[85%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                     m.sender === 'user'
                       ? 'bg-[#FFBA00] text-black font-black rounded-br-none shadow-md'
-                      : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none shadow-sm font-medium whitespace-pre-line'
+                      : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none shadow-sm font-medium'
                   }`}
                 >
-                  {m.text}
+                  {m.sender === 'ai' ? renderFormattedContent(m.text) : <p className="font-bold">{m.text}</p>}
                   <span
                     className={`block text-[9px] mt-1 text-right ${
                       m.sender === 'user' ? 'text-black/70' : 'text-slate-400'

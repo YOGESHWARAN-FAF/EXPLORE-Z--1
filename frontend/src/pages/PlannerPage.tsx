@@ -6,6 +6,8 @@ import {
   Activity, Footprints, Shield, Loader2, ArrowRight, ArrowLeft, RefreshCw, Mountain, ShieldAlert, Newspaper, Calendar, Map as MapIcon
 } from 'lucide-react';
 import { useTrip, MemberInput } from '../context/TripContext';
+import { useAuth } from '../context/AuthContext';
+import { saveSearchToUserFirebase } from '../services/firebase';
 import api from '../services/api';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -50,7 +52,8 @@ const MEDICAL_CONDITIONS = [
 export const PlannerPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setActiveTrip, setSavedTrips } = useTrip();
+  const { user } = useAuth();
+  const { setActiveTrip, setSavedTrips, setSearchHistory } = useTrip();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -268,6 +271,12 @@ export const PlannerPage: React.FC = () => {
 
       setActiveTrip(newTripData);
       setSavedTrips((prev) => [newTripData, ...prev.filter(t => t.trip_id !== newTripData.trip_id)]);
+      setSearchHistory((prev) => [newTripData, ...prev.filter(t => t.trip_id !== newTripData.trip_id)]);
+
+      // Save under user's UID in Firebase Realtime Database
+      if (user?.uid) {
+        saveSearchToUserFirebase(user.uid, newTripData);
+      }
 
       toast.success(`Smart Route Plan Generated for ${destination}!`);
       setIsGenerating(false);

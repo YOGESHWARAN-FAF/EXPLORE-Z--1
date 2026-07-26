@@ -33,6 +33,17 @@ async def get_latest_news(destination: str = Query("Ooty")):
         "news": articles  # Support both keys
     }
 
+@router.get("/feed")
+async def get_news_feed(destination: str = Query("Ooty")):
+    articles, summary, overall_rec = await fetch_destination_news(destination)
+    return {
+        "destination": destination,
+        "news_summary": summary,
+        "overall_ai_recommendation": overall_rec,
+        "articles": articles,
+        "news": articles  # Support both keys
+    }
+
 @router.get("/{destination}")
 async def get_news_by_destination(destination: str):
     articles, summary, overall_rec = await fetch_destination_news(destination)

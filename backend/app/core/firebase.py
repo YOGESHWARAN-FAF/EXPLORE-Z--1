@@ -47,8 +47,8 @@ def verify_firebase_id_token(token: str) -> dict:
 
 # --- Real Realtime Database Operations ---
 
-def save_trip_to_firebase(trip_dict: dict):
-    """Persists a complete AI generated trip plan to Firebase Realtime Database with payload optimization."""
+def save_trip_to_firebase(trip_dict: dict, user_uid: str = None):
+    """Persists a complete AI generated trip plan to Firebase Realtime Database under global paths and user UID path."""
     if not _firebase_initialized:
         print("❌ [FIREBASE DB ERROR] Cannot save trip: Firebase Admin SDK not initialized")
         return
@@ -83,6 +83,15 @@ def save_trip_to_firebase(trip_dict: dict):
         except Exception as e2:
             print(f"⚠️ [FIREBASE DB WARN] Could not write to /saved_trips/{trip_id}: {e2}")
 
+        # Write to user UID path /users/{clean_uid}/searched_plans/{trip_id}
+        if user_uid:
+            clean_uid = user_uid.replace(".", "_")
+            try:
+                db.reference(f"users/{clean_uid}/searched_plans/{trip_id}").set(fb_payload)
+                print(f"🔥 [FIREBASE USER UID DB] Saved trip search under user UID: /users/{clean_uid}/searched_plans/{trip_id}")
+            except Exception as e3:
+                print(f"⚠️ [FIREBASE USER DB WARN] Could not write to /users/{clean_uid}/searched_plans/{trip_id}: {e3}")
+
     except Exception as e:
         print(f"❌ [FIREBASE DB ERROR] Error in save_trip_to_firebase: {e}")
 
@@ -101,6 +110,54 @@ def get_saved_trips_from_firebase() -> list:
     except Exception as e:
         print("❌ [FIREBASE DB ERROR] Error reading trips from Firebase Realtime DB:")
         traceback.print_exc()
+    return []
+
+def get_user_search_history_from_firebase(user_uid: str) -> list:
+    """Retrieves search history for a specific user UID directly from Firebase Realtime DB."""
+    if not _firebase_initialized or not user_uid:
+        print("❌ [FIREBASE DB ERROR] Cannot fetch user history: SDK not initialized or empty UID")
+        return []
+    try:
+        clean_uid = user_uid.replace(".", "_")
+        ref = db.reference(f"users/{clean_uid}/searched_plans")
+        snapshot = ref.get()
+        if snapshot and isinstance(snapshot, dict):
+            history_list = list(snapshot.values())
+            print(f"📥 [FIREBASE USER UID DB] Retrieved {len(history_list)} searched plans for UID '{user_uid}'")
+            return history_list
+    except Exception as e:
+        print(f"❌ [FIREBASE DB ERROR] Error reading user history from /users/{user_uid}/searched_plans:")
+        traceback.print_exc()
+    return []
+
+def save_chat_session_to_firebase(user_uid: str, session_dict: dict):
+    """Persists a complete AI chat session under /users/{clean_uid}/chat_sessions/{session_id} in Firebase Realtime DB."""
+    if not _firebase_initialized or not user_uid or not session_dict:
+        return
+    try:
+        clean_uid = user_uid.replace(".", "_")
+        session_id = session_dict.get("id") or f"session_{int(datetime.now().timestamp() * 1000)}"
+        ref_path = f"users/{clean_uid}/chat_sessions/{session_id}"
+        db.reference(ref_path).set(session_dict)
+        print(f"🔥 [FIREBASE CHAT DB] Saved chat session {session_id} to /{ref_path}")
+    except Exception as e:
+        print(f"❌ [FIREBASE DB ERROR] Error saving chat session: {e}")
+
+def get_user_chat_sessions_from_firebase(user_uid: str) -> list:
+    """Retrieves all saved chat sessions for a specific user UID from Firebase Realtime DB."""
+    if not _firebase_initialized or not user_uid:
+        return []
+    try:
+        clean_uid = user_uid.replace(".", "_")
+        ref = db.reference(f"users/{clean_uid}/chat_sessions")
+        snapshot = ref.get()
+        if snapshot and isinstance(snapshot, dict):
+            sessions_list = list(snapshot.values())
+            sessions_list.sort(key=lambda x: x.get("updated_at", ""), reverse=True)
+            print(f"📥 [FIREBASE CHAT DB] Retrieved {len(sessions_list)} chat sessions for UID '{user_uid}'")
+            return sessions_list
+    except Exception as e:
+        print(f"❌ [FIREBASE DB ERROR] Error reading chat sessions: {e}")
     return []
 
 def update_live_location_in_firebase(trip_id: str, location_dict: dict):
