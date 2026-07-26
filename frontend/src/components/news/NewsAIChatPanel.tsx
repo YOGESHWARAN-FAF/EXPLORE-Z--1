@@ -29,6 +29,13 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isLoading, isOpen]);
 
   // Suggested prompt chips
   const suggestedPrompts = [
@@ -151,11 +158,6 @@ export const NewsAIChatPanel: React.FC<NewsAIChatPanelProps> = ({
       </div>
     );
   };
-  const chatEndRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
 
   return (
     <AnimatePresence>
