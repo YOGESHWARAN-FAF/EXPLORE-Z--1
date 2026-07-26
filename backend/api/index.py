@@ -1,12 +1,20 @@
 import sys
 import os
 
-# Add parent backend directory to sys.path
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Add current directory and parent backend directory to sys.path
+api_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.dirname(api_dir)
+
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
+if api_dir not in sys.path:
+    sys.path.insert(0, api_dir)
 
-from app.main import app as app
+try:
+    from app.main import app as fastapi_app
+except Exception:
+    from main import app as fastapi_app
 
 # Handler export for Vercel serverless function
-app = app
+app = fastapi_app
+handler = fastapi_app
