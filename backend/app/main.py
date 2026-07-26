@@ -18,14 +18,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Route registration for all path prefixes (/api/v1, /api, and root)
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(api_router, prefix="/api")
+app.include_router(api_router, prefix="")
 
 @app.get("/")
 async def root():
     return {
         "status": "online",
         "app": settings.PROJECT_NAME,
-        "docs": f"{settings.API_V1_STR}/docs"
+        "docs": f"{settings.API_V1_STR}/docs",
+        "health": "/health"
     }
 
 @app.get("/health")

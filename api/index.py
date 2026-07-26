@@ -2,7 +2,8 @@ import sys
 import os
 
 # Add root directory and backend directory to sys.path for Vercel Python runtime
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(current_dir)
 backend_dir = os.path.join(root_dir, "backend")
 
 if root_dir not in sys.path:
@@ -10,4 +11,7 @@ if root_dir not in sys.path:
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
-from backend.app.main import app
+from backend.app.main import app as app
+
+# Handler export for Vercel serverless function
+app = app
